@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BS Art</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="left_s settingspan">
+            <div class="logo">
+                BSArt
+            </div>
+            <div class="setting">
+                <div>
+                    Размер арта <span id="pixelSlider_val"></span>
+                </div>
+                <!--<input type="range" id="pixelSlider" min="2" max="510" step="2" value="25">-->
+                <select id="pixelSlider">
+                    <option value="4">2</option>
+                    <option value="8">4</option>
+                    <option value="16">8</option>
+                    <option value="32">16</option>
+                    <option value="64">32</option>
+                    <option value="128">64</option>
+                    <option value="256">128</option>
+                    <option value="512">256</option>
+                </select>
+            </div>
+            <div class="setting">
+                <div>
+                    Цвет сетки
+                </div>
+                <select id="colorselect">
+                    <option value="#00000000">Отключить</option>
+                    <option value="#ff0000">Красный</option>
+                    <option value="#00ff00">Зелёный</option>
+                    <option value="#0000ff">Синий</option>
+                    <option value="#ffff00">Жёлтый</option>
+                    <option value="#ff00ff">Фиолетовый</option>
+                    <option value="#00ffff">Бирюзовый</option>
+                    <option value="#ffffff">Белый</option>
+                    <option value="#000000">Чёрный</option>
+                    <option value="#800000">Бордовый</option>
+                    <option value="#808000">Оливковый</option>
+                    <option value="#800080">Пурпурный</option>
+                    <option value="#008000">Зелёный</option>
+                    <option value="#008080">Тёмный бирюзовый</option>
+                    <option value="#000080">Тёмно-синий</option>
+                    <option value="#ffa500">Оранжевый</option>
+                    <option value="#ffc0cb">Розовый</option>
+                    <option value="#a52a2a">Коричневый</option>
+                    <option value="#d3d3d3">Светло-серый</option>
+                    <option value="#696969">Тёмно-серый</option>
+                    <option value="#4b0082">Индиго</option>
+                </select>
+            </div>
+            
+            <div class="setting">
+                <div>Загрузить фото</div>
+                <input type="file" class="filter-control" id="memberfile" accept="image/*" title="АА"/>
+                
+            </div>
+            <div class="setting">
+                <div></div>
+                <input type="button" class="filter-control" id="acceptbutton" value="Обработать">
+            </div>
+            <div class="setting">
+                <div>Скачать результат</div>
+                <input type="button" class="filter-control" id="downloadButton" value="Скачать">
+            </div>
+        </div>
+        <div class="right_s settingspan">
+            <div class="setting">
+                <div>Загруженное фото</div>
+                <img src="./bsart.png" id="myimg">
+            </div>
+            <div class="setting">
+                <div>Обработка шаг @1</div>
+                <canvas class="temp_canvas" id="temp_canvas"></canvas>
+            </div>
+            <div class="setting">
+                <div>Вид на миникарте</div>
+                <canvas class="final_canvas" id="final_canvas2"></canvas>
+            </div>
+            <canvas class="main_canvas" id="main_canvas" style="display: none;"></canvas>
+            <canvas class="final_canvas" id="final_canvas" style="display: none;"></canvas>
+        </div>
+        <div class="content">
+            <canvas class="control_canvas" id="control_canvas"></canvas>
+        </div>
+    </div>
+    
+    <script src="./script.js"></script>
+    <script src="./control.js"></script>
+    <script src="./design.js"></script>
+</body>
+
+</html>
