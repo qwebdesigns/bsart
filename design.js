@@ -57,24 +57,18 @@ function initCropper() {
         justifyContent: 'center'
     });
 
-    // Основной контейнер обрезки
+    // Контейнер для обрезки с ограничениями
     const cropBox = document.createElement('div');
     Object.assign(cropBox.style, {
-        width: '800px',
-        height: '600px',
+        maxWidth: '90vw',
+        maxHeight: '90vh',
         backgroundColor: '#fff',
         borderRadius: '8px',
         overflow: 'hidden',
         position: 'relative'
     });
 
-    // Изображение для обрезки
     const cropImage = document.createElement('img');
-    Object.assign(cropImage.style, {
-        maxWidth: 'none',
-        maxHeight: 'none',
-        objectFit: 'cover'
-    });
 
     // Панель управления
     const controls = document.createElement('div');
@@ -88,7 +82,6 @@ function initCropper() {
         zIndex: '10001'
     });
 
-    // Кнопки
     const createButton = (text, bgColor) => {
         const btn = document.createElement('button');
         btn.textContent = text;
@@ -98,13 +91,8 @@ function initCropper() {
             color: 'white',
             border: 'none',
             borderRadius: '5px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '600',
-            transition: 'opacity 0.3s'
+            cursor: 'pointer'
         });
-        btn.onmouseenter = () => btn.style.opacity = '0.9';
-        btn.onmouseleave = () => btn.style.opacity = '1';
         return btn;
     };
 
@@ -128,32 +116,39 @@ function initCropper() {
 
             if (cropper) cropper.destroy();
 
-            cropper = new Cropper(cropImage, {
-                aspectRatio: 1,
-                viewMode: 3,
-                autoCropArea: 1,
-                responsive: true,
-                movable: true,
-                zoomable: true,
-                zoomOnTouch: false,
-                zoomOnWheel: false,
-                rotatable: false,
-                scalable: false,
-                toggleDragModeOnDblclick: false,
-                minContainerWidth: 800,
-                minContainerHeight: 600,
-                ready() {
-                    this.cropper.setCropBoxData({
-                        width: 800,
-                        height: 600
-                    }).setCanvasData({
-                        width: 800,
-                        height: 600
-                    });
-                }
-            });
+            cropImage.onload = () => {
+                // Автоматический расчет размеров
+                const maxWidth = window.innerWidth * 0.9;
+                const maxHeight = window.innerHeight * 0.9;
+                const ratio = Math.min(
+                    maxWidth / cropImage.naturalWidth,
+                    maxHeight / cropImage.naturalHeight,
+                    1
+                );
 
-            cropModal.style.display = 'flex';
+                Object.assign(cropBox.style, {
+                    width: `${cropImage.naturalWidth * ratio}px`,
+                    height: `${cropImage.naturalHeight * ratio}px`
+                });
+
+                cropper = new Cropper(cropImage, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    autoCropArea: 1,
+                    responsive: true,
+                    movable: true,
+                    zoomable: true,
+                    guides: false,
+                    ready() {
+                        this.cropper.setCropBoxData({
+                            width: this.cropper.getContainerData().width,
+                            height: this.cropper.getContainerData().height
+                        });
+                    }
+                });
+
+                cropModal.style.display = 'flex';
+            };
         };
         reader.readAsDataURL(file);
     });
@@ -161,13 +156,11 @@ function initCropper() {
     // Обработчики кнопок
     cropButton.addEventListener('click', () => {
         const canvas = cropper.getCroppedCanvas({
-            width: 800,
-            height: 600,
             imageSmoothingQuality: 'high'
         });
-
         document.getElementById('myimg').src = canvas.toDataURL('image/jpeg', 0.95);
-        //resultContainer.innerHTML = `<img src="${canvas.toDataURL('image/jpeg', 0.95)}" style="max-width:100%; border-radius:4px;">`;
+        //resultContainer.innerHTML = `<img src="${canvas.toDataURL('image/jpeg', 0.9)}" 
+        //    style="max-width:100%; max-height:80vh;">`;
         cropModal.style.display = 'none';
         cropper.destroy();
         fileInput.value = '';
