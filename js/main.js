@@ -3,12 +3,13 @@
 (function () {
   const $ = id => document.getElementById(id);
   const S = { src: null, w: 32, h: 32, res: null };
-  const MAXS = 256, SLIDERS = { bright: ['Яркость', -100, 100, 0], contrast: ['Контраст', -100, 100, 0], sat: ['Насыщенность', -100, 100, 0], sharp: ['Резкость', 0, 100, 0], strength: ['Сила дизеринга', 0, 100, 70], calm: ['Штраф за рябь', 0, 100, 0], despeckle: ['Чистка одиночных', 0, 3, 0], maxb: ['Макс. блоков (0 — без лимита)', 0, 64, 0] };
+  const MAXS = 256, SLIDERS = { bright: ['Яркость', -100, 100, 0], contrast: ['Контраст', -100, 100, 0], sat: ['Насыщенность', -100, 100, 0], sharp: ['Резкость', 0, 100, 0], strength: ['Сила дизеринга', 0, 100, 70], calm: ['Штраф за рябь', 0, 100, 0], despeckle: ['Чистка одиночных', 0, 3, 0], maxb: ['Макс. блоков (0 — без лимита)', 0, 64, 0], bgtol: ['Допуск фона', 0, 100, 25] };
   const COLORS = [['#00000000', 'Отключить'], ['#ff0000', 'Красный'], ['#00ff00', 'Зелёный'], ['#0000ff', 'Синий'], ['#ffff00', 'Жёлтый'], ['#ff00ff', 'Фиолетовый'], ['#00ffff', 'Бирюзовый'], ['#ffffff', 'Белый'], ['#000000', 'Чёрный'], ['#800000', 'Бордовый'], ['#808000', 'Оливковый'], ['#800080', 'Пурпурный'], ['#008000', 'Тёмно-зелёный'], ['#008080', 'Тёмный бирюзовый'], ['#000080', 'Тёмно-синий'], ['#ffa500', 'Оранжевый'], ['#ffc0cb', 'Розовый'], ['#a52a2a', 'Коричневый'], ['#d3d3d3', 'Светло-серый'], ['#696969', 'Тёмно-серый'], ['#4b0082', 'Индиго']];
   $('colorselect').innerHTML = COLORS.map(c => `<option value="${c[0]}">${c[1]}</option>`).join('');
   const sl = id => { const [t, a, b, v] = SLIDERS[id]; return `<label class="rng"><span>${t}<b id="v_${id}">${v}</b></span><input type="range" id="s_${id}" min="${a}" max="${b}" value="${v}"></label>`; };
   $('slFilters').innerHTML = ['bright', 'contrast', 'sat', 'sharp'].map(sl).join('');
   $('slDither').innerHTML = sl('strength');
+  $('slBg').innerHTML = sl('bgtol');
   $('slBlocks').innerHTML = ['calm', 'despeckle', 'maxb'].map(sl).join('');
   $('presets').innerHTML = [16, 32, 64, 128, 256].map(n => `<button data-n="${n}">${n}</button>`).join('');
 
@@ -18,7 +19,7 @@
   }
   const num = id => +$(id).value;
   const opts = () => ({ x: parseInt($('expX').value) || 0, z: parseInt($('expZ').value) || 0, y: $('expY').value.trim() || '?', flip: $('expFlip').checked, skip: $('expSkip').checked });
-  const procOpts = () => ({ fit: $('fit').value, algo: $('algo').value, metric: $('metric').value, dither: $('dither').value, strength: num('s_strength') / 100, bright: num('s_bright'), contrast: num('s_contrast'), sat: num('s_sat'), sharp: num('s_sharp'), auto: $('auto').checked, gray: $('gray').checked, calm: num('s_calm'), despeckle: num('s_despeckle'), maxBlocks: num('s_maxb'), active: BS.Palette.active });
+  const procOpts = () => ({ fit: $('fit').value, algo: $('algo').value, metric: $('metric').value, dither: $('dither').value, strength: num('s_strength') / 100, bright: num('s_bright'), contrast: num('s_contrast'), sat: num('s_sat'), sharp: num('s_sharp'), auto: $('auto').checked, gray: $('gray').checked, calm: num('s_calm'), despeckle: num('s_despeckle'), maxBlocks: num('s_maxb'), active: BS.Palette.active, bg: $('bg').checked, bgTol: num('s_bgtol') });
 
   function info() {
     const el = $('expInfo'), o = opts(), err = BS.Exporter.validate(o, S.w, S.h);
@@ -28,6 +29,7 @@
     $('downloadTxt').disabled = !!err.length || !S.res;
   }
   function reprocess() {
+    if (BS.Crop.isOpen()) return BS.Crop.refresh(); // во время обрезки обновляется предпросмотр
     if (!S.src) return;
     try { S.res = BS.Processor.run(S.src, S.w, S.h, procOpts()); }
     catch (e) { console.error(e); return toast('Не удалось прочитать пиксели. Откройте страницу через сервер (GitHub Pages или «python -m http.server»), а не двойным кликом по файлу.', true); }
@@ -36,7 +38,24 @@
     BS.Viewer.setGrid(S.res.grid, S.w, S.h); BS.Palette.renderUsed(S.res.grid); info();
   }
   let dt; const later = () => { clearTimeout(dt); dt = setTimeout(reprocess, 90); };
-  function setSource(canvas, url) { S.src = canvas; $('myimg').src = url; reprocess(); }
+  const clamp = v => Math.min(MAXS, Math.max(1, Math.round(v) || 1));
+  // размеры сетки под пропорции области: с замком длинная сторона = текущая длинная сторона, без замка — как задано вручную
+  function dimsFor(asp) {
+    if (!$('szLock').checked) return { w: S.w, h: S.h };
+    const L = Math.max(S.w, S.h); return asp >= 1 ? { w: L, h: clamp(L / asp) } : { w: clamp(L * asp), h: L };
+  }
+  function setSource(canvas, url) {
+    S.src = canvas; $('myimg').src = url;
+    const d = dimsFor(canvas.width / canvas.height); S.w = d.w; S.h = d.h; $('szW').value = S.w; $('szH').value = S.h; reprocess();
+  }
+  function cropPreview(c) { // живой предпросмотр: тот же конвейер, что и для готового арта
+    const d = dimsFor(c.width / c.height);
+    try {
+      const r = BS.Processor.run(c, d.w, d.h, procOpts()); BS.Viewer.preview($('cropPrev'), r.grid, d.w, d.h);
+      let n = 0; for (const k of r.grid) if (k >= 0) n++;
+      $('cropInfo').textContent = `${d.w}×${d.h} клеток · блоков в арте: ${n}`;
+    } catch (e) { console.error(e); }
+  }
 
   /* режимы: набор готовых настроек, после выбора их можно менять вручную */
   const BASE = { algo: 'area', dither: 'none', metric: 'lab', strength: 70, calm: 0, despeckle: 0, maxb: 0, bright: 0, contrast: 0, sat: 0, sharp: 0, auto: false, gray: false };
@@ -64,7 +83,6 @@
   $('usedList').addEventListener('click', e => { const b = e.target.closest('button'); if (b) drop(+b.dataset.k); });
 
   /* размеры */
-  const clamp = v => Math.min(MAXS, Math.max(1, Math.round(v) || 1));
   function setSize(w, h) { S.w = clamp(w); S.h = clamp(h); $('szW').value = S.w; $('szH').value = S.h; reprocess(); }
   const ratio = () => S.src ? S.src.width / S.src.height : 1;
   $('szW').addEventListener('change', () => setSize(num('szW'), $('szLock').checked ? num('szW') / ratio() : num('szH')));
@@ -74,10 +92,10 @@
     if ($('szLock').checked) { const r = ratio(); r >= 1 ? setSize(n, n / r) : setSize(n * r, n); } else setSize(n, n);
     toast(`Пересобрано: ${S.w}×${S.h}`);
   });
-  $('szLock').addEventListener('change', () => { if ($('szLock').checked) setSize(S.w, S.w / ratio()); });
+  $('szLock').addEventListener('change', () => { if ($('szLock').checked) { const d = dimsFor(ratio()); setSize(d.w, d.h); } else reprocess(); });
 
   /* параметры обработки */
-  ['fit', 'algo', 'metric', 'dither', 'auto', 'gray'].forEach(id => $(id).addEventListener('change', reprocess));
+  ['fit', 'algo', 'metric', 'dither', 'auto', 'gray', 'bg'].forEach(id => $(id).addEventListener('change', reprocess));
   document.querySelectorAll('.rng input').forEach(r => {
     r.addEventListener('input', () => { $('v_' + r.id.slice(2)).textContent = r.value; later(); });
     r.addEventListener('dblclick', () => { r.value = SLIDERS[r.id.slice(2)][3]; r.dispatchEvent(new Event('input')); });
@@ -93,7 +111,7 @@
 
   $('memberfile').addEventListener('change', async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    try { const r = await BS.Crop.ask(f, S.w / S.h); if (r) setSource(r.canvas, r.url); }
+    try { const r = await BS.Crop.ask(f, { onChange: cropPreview, gridAspect: () => S.w / S.h }); if (r) setSource(r.canvas, r.url); }
     catch { toast('Не удалось открыть картинку', true); }
   });
 

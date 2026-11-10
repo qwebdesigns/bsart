@@ -70,6 +70,14 @@
     setGrid(g, w, h) { const changed = w !== GW || h !== GH; grid = g; GW = w; GH = h; renderMini(); changed ? fit() : draw(); },
     setGridColor(c) { gridColor = c; draw(); },
     fit,
+    preview(c, g, w, h) { // рисует блоки в любой canvas (предпросмотр при обрезке)
+      const cell = Math.max(1, Math.floor(Math.min(520 / w, 520 / h)));
+      c.width = w * cell; c.height = h * cell; const k = c.getContext('2d'); k.imageSmoothingEnabled = false;
+      for (let q = 0; q < g.length; q++) {
+        if (g[q] < 0) continue; const b = BL[g[q]], im = cell >= 4 ? BS.Textures.block(b) : BS.Textures.rgb(b);
+        if (im) k.drawImage(im, (q % w) * cell, ((q / w) | 0) * cell, cell, cell);
+      }
+    },
     pngCanvas() { // полноразмерная картинка из текстур
       const cell = Math.max(GW, GH) > 128 ? 16 : 32, c = document.createElement('canvas'); c.width = GW * cell; c.height = GH * cell;
       const k = c.getContext('2d'); k.imageSmoothingEnabled = false;

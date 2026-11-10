@@ -219,15 +219,6 @@ input[type="button"]:hover:not(:disabled) { background-color: #ffe2a8; }
     background: rgba(0, 0, 0, .75); color: #fff; font: 13px monospace; pointer-events: none;
 }
 #fitbutton { position: absolute; right: 10px; top: 10px; width: auto; padding: 6px 14px; }
-#cropModal {
-    position: fixed; inset: 0; z-index: 10000; background: rgba(0, 0, 0, .95);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-}
-#cropModal[hidden] { display: none; }
-.cropbox { width: min(90vw, 900px); height: min(72vh, 700px); background: #fff; border-radius: 8px; overflow: hidden; }
-.cropbox img { display: block; max-width: 100%; }
-.cropbtns { display: flex; gap: 14px; }
-.cropbtns input { width: auto !important; padding: 10px 26px !important; }
 #toast {
     position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 20000; opacity: 0; pointer-events: none;
     transition: opacity .2s; padding: 10px 18px; border-radius: 8px; color: #fff; max-width: 90vw; text-align: center;
@@ -284,3 +275,15 @@ input[type="button"]:hover:not(:disabled) { background-color: #ffe2a8; }
 .blk.off { border-color: #444; opacity: .4; }
 .blk.off img { filter: grayscale(1); }
 .blk.off b { text-decoration: line-through; }
+
+/* ---- обрезка внутри центральной области: панели слева и справа остаются доступны ---- */
+#cropModal { position: absolute; inset: 0; z-index: 50; background: #111; display: grid; grid-template-columns: minmax(0, 1fr) 300px; }
+#cropModal[hidden] { display: none; }
+.cropmain { position: relative; min-height: 0; }
+.cropbox { position: absolute; inset: 10px; }
+.cropbox img { display: block; max-width: 100%; }
+.croppane { background: #1a1a1a; border-left: 1px solid #333; padding: 12px; display: flex; flex-direction: column; gap: 10px; align-items: center; overflow: auto; color: #fff; }
+#cropPrev { max-width: 100%; max-height: 40vh; image-rendering: pixelated; background: #000; border: 1px solid #444; }
+.cropbtns { display: flex; gap: 10px; margin-top: auto; width: 100%; }
+.cropbtns input { flex: 1; width: auto !important; padding: 10px !important; }
+@media (max-width: 900px) { #cropModal { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } }

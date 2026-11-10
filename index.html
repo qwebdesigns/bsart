@@ -30,13 +30,19 @@
                     <label>Ширина (X)<input type="number" id="szW" min="1" max="256" value="32"></label>
                     <label>Высота (Z)<input type="number" id="szH" min="1" max="256" value="32"></label>
                 </div>
-                <label class="check"><input type="checkbox" id="szLock"> Сохранять пропорции фото</label>
-                <div>Подгонка кадра</div>
+                <label class="check"><input type="checkbox" id="szLock" checked> Сохранять пропорции фото</label>
+                <div>Если пропорции не совпали</div>
                 <select id="fit">
+                    <option value="stretch">Растянуть под размер</option>
                     <option value="cover">Заполнить (обрезать края)</option>
                     <option value="contain">Вписать (пустые поля)</option>
-                    <option value="stretch">Растянуть</option>
                 </select>
+            </div>
+            <div class="setting">
+                <div>Фон</div>
+                <label class="check"><input type="checkbox" id="bg"> Убрать фон (цвет по краям → пусто)</label>
+                <div id="slBg"></div>
+                <small>Для персонажа на белом фоне. Белое внутри персонажа остаётся. Пустые клетки не попадают в файл.</small>
             </div>
             <div class="setting">
                 <div>Алгоритм сжатия</div>
@@ -121,16 +127,20 @@
             <canvas class="control_canvas" id="control_canvas"></canvas>
             <div id="hud">—</div>
             <input type="button" id="fitbutton" value="Вписать">
+            <div id="cropModal" hidden>
+                <div class="cropmain"><div class="cropbox"><img id="cropImg" alt=""></div></div>
+                <div class="croppane">
+                    <b>Так арт будет выглядеть</b>
+                    <canvas id="cropPrev"></canvas>
+                    <div id="cropInfo" class="muted"></div>
+                    <div class="presets"><button id="asFree">Свободно</button><button id="asGrid">Как сетка</button><button id="as11">1 : 1</button></div>
+                    <small>Размер, фон, фильтры и режим слева можно менять прямо сейчас — предпросмотр обновится.</small>
+                    <div class="cropbtns"><input type="button" id="cropOk" value="Применить"><input type="button" id="cropNo" value="Отмена"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="cropModal" hidden>
-        <div class="cropbox"><img id="cropImg" alt=""></div>
-        <div class="cropbtns">
-            <input type="button" id="cropOk" value="Обрезать">
-            <input type="button" id="cropNo" value="Отмена">
-        </div>
-    </div>
     <div id="blkModal" hidden>
         <div class="blkbox">
             <div class="blkbar">

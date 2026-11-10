@@ -154,9 +154,30 @@
     }
   }
 
+  // Удаление фона: цвет фона = самый частый цвет рамки; заливка идёт от краёв, поэтому белое внутри персонажа (глаза, блики) остаётся
+  function removeBg(src, tol) {
+    if (src._bg && src._bg.tol === tol) return src._bg.c;
+    const W = src.width, H = src.height, id = src.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, W, H), d = id.data, cnt = new Map();
+    const add = (x, y) => { const p = (y * W + x) * 4, k = (d[p] >> 4) << 8 | (d[p + 1] >> 4) << 4 | d[p + 2] >> 4, e = cnt.get(k) || [0, 0, 0, 0]; e[0]++; e[1] += d[p]; e[2] += d[p + 1]; e[3] += d[p + 2]; cnt.set(k, e); };
+    for (let x = 0; x < W; x++) { add(x, 0); add(x, H - 1); } for (let y = 0; y < H; y++) { add(0, y); add(W - 1, y); }
+    let bg = null; for (const e of cnt.values()) if (!bg || e[0] > bg[0]) bg = e;
+    const br = bg[1] / bg[0], bgG = bg[2] / bg[0], bb = bg[3] / bg[0], T = (tol * 3) ** 2;
+    const like = p => d[p + 3] < 128 || ((d[p] - br) ** 2 + (d[p + 1] - bgG) ** 2 + (d[p + 2] - bb) ** 2) <= T;
+    const seen = new Uint8Array(W * H), st = new Int32Array(W * H); let sp = 0;
+    const push = i => { if (!seen[i] && like(i * 4)) { seen[i] = 1; st[sp++] = i; } };
+    for (let x = 0; x < W; x++) { push(x); push((H - 1) * W + x); } for (let y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
+    while (sp) {
+      const i = st[--sp], x = i % W; d[i * 4 + 3] = 0;
+      if (x > 0) push(i - 1); if (x < W - 1) push(i + 1); if (i >= W) push(i - W); if (i < W * (H - 1)) push(i + W);
+    }
+    const c = mk(W, H); c.getContext('2d').putImageData(id, 0, 0); src._bg = { tol, c }; return c;
+  }
+
   BS.Processor = {
+    _removeBg: removeBg,
     _match: match,
     run(src, w, h, o) {
+      if (o.bg) src = removeBg(src, o.bgTol);
       const r = region(src, w, h, o.fit), part = (RS[o.algo] || RS.area)(src, r), rgba = new Uint8ClampedArray(w * h * 4);
       for (let y = 0; y < r.dh; y++) for (let x = 0; x < r.dw; x++) { const p = (y * r.dw + x) * 4, q = ((y + r.dy) * w + x + r.dx) * 4; rgba[q] = part[p]; rgba[q + 1] = part[p + 1]; rgba[q + 2] = part[p + 2]; rgba[q + 3] = part[p + 3]; }
       const px = filters(rgba, w, h, o), alpha = new Uint8Array(w * h), img = new ImageData(w, h);

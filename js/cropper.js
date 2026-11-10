@@ -1,7 +1,7 @@
-// Обрезка фото в квадрат (Cropper.js с CDN, как в исходнике). Без сети — центральная обрезка.
+// Свободная обрезка (любая область) с живым предпросмотром в блоках. Cropper.js с CDN; без сети — центральный квадрат.
 (function () {
-  const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/';
-  let libP = null;
+  const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/', $ = id => document.getElementById(id);
+  let libP = null, cr = null, onChange = () => {}, t = 0;
   const lib = () => libP || (libP = new Promise((ok, no) => {
     if (window.Cropper) return ok();
     const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = CDN + 'cropper.min.css'; document.head.appendChild(l);
@@ -12,18 +12,26 @@
     c.width = c.height = Math.min(s, 2048);
     c.getContext('2d').drawImage(img, (w - s) / 2, (h - s) / 2, s, s, 0, 0, c.width, c.height); return c;
   }
-  async function ask(file, aspect) {
+  function emit() { // предпросмотр текущей области (уменьшенная копия — быстро)
+    if (!cr) return; clearTimeout(t);
+    t = setTimeout(() => { if (cr) onChange(cr.getCroppedCanvas({ maxWidth: 512, maxHeight: 512, imageSmoothingQuality: 'high' })); }, 60);
+  }
+  async function ask(file, opt) {
     const url = await new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(file); });
     const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
     try { await lib(); } catch { return { canvas: centerSquare(img), url }; }
-    const modal = document.getElementById('cropModal'), el = document.getElementById('cropImg');
+    onChange = opt.onChange || (() => {});
+    const modal = $('cropModal'), el = $('cropImg');
     return new Promise(res => {
       modal.hidden = false; el.src = url;
-      const cr = new Cropper(el, { aspectRatio: aspect || 1, viewMode: 1, autoCropArea: 1, guides: false });
-      const done = v => { modal.hidden = true; cr.destroy(); res(v); };
-      document.getElementById('cropOk').onclick = () => { const c = cr.getCroppedCanvas({ imageSmoothingQuality: 'high', maxWidth: 2048, maxHeight: 2048 }); done({ canvas: c, url: c.toDataURL('image/png') }); };
-      document.getElementById('cropNo').onclick = () => done(null);
+      cr = new Cropper(el, { aspectRatio: NaN, viewMode: 1, autoCropArea: .9, background: false, ready: emit, crop: emit });
+      const done = v => { modal.hidden = true; cr.destroy(); cr = null; res(v); };
+      $('asFree').onclick = () => cr.setAspectRatio(NaN);
+      $('asGrid').onclick = () => cr.setAspectRatio(opt.gridAspect());
+      $('as11').onclick = () => cr.setAspectRatio(1);
+      $('cropOk').onclick = () => { const c = cr.getCroppedCanvas({ maxWidth: 2048, maxHeight: 2048, imageSmoothingQuality: 'high' }); done({ canvas: c, url: c.toDataURL('image/png') }); };
+      $('cropNo').onclick = () => done(null);
     });
   }
-  BS.Crop = { ask, centerSquare };
+  BS.Crop = { ask, centerSquare, isOpen: () => !!cr, refresh: emit };
 })();
