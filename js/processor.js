@@ -14,8 +14,8 @@
   const flat = a => Float32Array.from(a.flat());
   // Пространства подбора. w — доля ошибки, которая уходит соседям (в Lab цветность гасится: это и убирает «фиолетовые» пиксели)
   const SP = {
-    lab: { pal: flat(B.map(b => toLab(...b.rgb))), to: toLab, min: [0, -128, -128], max: [100, 128, 128], w: [1, .3, .3], maxErr: [28, 10, 10], spread: [24, 0, 0] },
-    rgb: { pal: flat(B.map(b => b.rgb)), to: (r, g, b) => [r, g, b], min: [0, 0, 0], max: [255, 255, 255], w: [1, 1, 1], maxErr: [40, 40, 40], spread: [60, 60, 60] }
+    lab: { pen: 1, pal: flat(B.map(b => toLab(...b.rgb))), to: toLab, min: [0, -128, -128], max: [100, 128, 128], w: [1, .3, .3], maxErr: [28, 10, 10], spread: [24, 0, 0] },
+    rgb: { pal: flat(B.map(b => b.rgb)), to: (r, g, b) => [r, g, b], min: [0, 0, 0], max: [255, 255, 255], w: [1, 1, 1], maxErr: [40, 40, 40], spread: [60, 60, 60], pen: 12 }
   };
   const K = { fs: { d: 16, k: [[1, 0, 7], [-1, 1, 3], [0, 1, 5], [1, 1, 1]] }, atk: { d: 8, k: [[1, 0, 1], [2, 0, 1], [-1, 1, 1], [0, 1, 1], [1, 1, 1], [0, 2, 1]] }, sl: { d: 4, k: [[1, 0, 2], [-1, 1, 1], [0, 1, 1]] } };
   const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -111,8 +111,10 @@
   }
 
   /* ---- подбор блоков + дизеринг ---- */
-  function match(px, alpha, w, h, o) {
+  function match(px, alpha, w, h, o, mask) {
     const sp = SP[o.metric] || SP.lab, P = sp.pal, grid = new Int16Array(w * h).fill(-1);
+    let list = []; for (let k = 0; k < np; k++) if (!mask || mask[k]) list.push(k); if (!list.length) list = B.map((_, k) => k);
+    const pen = new Float32Array(np); for (const k of list) pen[k] = (o.calm || 0) / 100 * B[k].noise * 8 * sp.pen; // штраф за рябые текстуры
     const kern = K[o.dither], E = kern ? new Float32Array(w * h * 3) : null, st = o.strength;
     for (let y = 0; y < h; y++) {
       const rev = E && (y & 1); // змейка: чётные строки слева направо, нечётные обратно
@@ -122,7 +124,7 @@
         if (E) for (let c = 0; c < 3; c++) v[c] = Math.min(sp.max[c], Math.max(sp.min[c], v[c] + E[i * 3 + c]));
         else if (o.dither === 'bayer') { const t = (BAY[(y & 3) * 4 + (x & 3)] / 15 - .5) * st; for (let c = 0; c < 3; c++) v[c] += t * sp.spread[c]; }
         let best = 0, bd = 1e12;
-        for (let k = 0; k < np; k++) { const a = v[0] - P[k * 3], b = v[1] - P[k * 3 + 1], c = v[2] - P[k * 3 + 2], d = a * a + b * b + c * c; if (d < bd) { bd = d; best = k; } }
+        for (const k of list) { const a = v[0] - P[k * 3], b = v[1] - P[k * 3 + 1], c = v[2] - P[k * 3 + 2], d = a * a + b * b + c * c + pen[k]; if (d < bd) { bd = d; best = k; } }
         grid[i] = best;
         if (E) for (let c = 0; c < 3; c++) {
           const e = Math.max(-sp.maxErr[c], Math.min(sp.maxErr[c], (v[c] - P[best * 3 + c]) * sp.w[c] * st));
@@ -133,6 +135,25 @@
     return grid;
   }
 
+  // Чистка одиночных: клетка, окружённая (≥5 из 8) другим блоком, заменяется им, если цвет почти не страдает
+  function despeckle(grid, px, w, h, passes, o) {
+    const sp = SP[o.metric] || SP.lab, P = sp.pal, tol = 40 * sp.pen;
+    const dist = (v, k) => { const a = v[0] - P[k * 3], b = v[1] - P[k * 3 + 1], c = v[2] - P[k * 3 + 2]; return a * a + b * b + c * c; };
+    for (let p = 0; p < passes; p++) {
+      const src = Int16Array.from(grid);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = y * w + x, cur = src[i]; if (cur < 0) continue;
+        const ids = [], cn = [];
+        for (let j = -1; j <= 1; j++) for (let q = -1; q <= 1; q++) {
+          if (!j && !q) continue; const nx = x + q, ny = y + j; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          const b = src[ny * w + nx]; if (b < 0) continue; const t = ids.indexOf(b); t < 0 ? (ids.push(b), cn.push(1)) : cn[t]++;
+        }
+        let bm = -1, bc = 0; for (let t = 0; t < ids.length; t++) if (cn[t] > bc) { bc = cn[t]; bm = ids[t]; }
+        if (bc >= 5 && bm !== cur) { const v = sp.to(px[i * 3], px[i * 3 + 1], px[i * 3 + 2]); if (dist(v, bm) <= dist(v, cur) * 3 + tol) grid[i] = bm; }
+      }
+    }
+  }
+
   BS.Processor = {
     _match: match,
     run(src, w, h, o) {
@@ -141,7 +162,14 @@
       const px = filters(rgba, w, h, o), alpha = new Uint8Array(w * h), img = new ImageData(w, h);
       for (let i = 0; i < w * h; i++) { alpha[i] = rgba[i * 4 + 3]; img.data[i * 4] = px[i * 3]; img.data[i * 4 + 1] = px[i * 3 + 1]; img.data[i * 4 + 2] = px[i * 3 + 2]; img.data[i * 4 + 3] = alpha[i] < 128 ? 0 : 255; }
       const step = mk(w, h); step.getContext('2d').putImageData(img, 0, 0);
-      return { grid: match(px, alpha, w, h, o), w, h, step };
+      let mask = o.active;
+      if (o.maxBlocks > 0) { // оставляем только K самых нужных блоков
+        const g0 = match(px, alpha, w, h, { ...o, dither: 'none' }, mask), cnt = new Uint32Array(np); for (const k of g0) if (k >= 0) cnt[k]++;
+        mask = new Uint8Array(np); [...cnt.keys()].filter(k => cnt[k]).sort((a, b) => cnt[b] - cnt[a]).slice(0, o.maxBlocks).forEach(k => mask[k] = 1);
+      }
+      const grid = match(px, alpha, w, h, o, mask);
+      if (o.despeckle > 0) despeckle(grid, px, w, h, o.despeckle, o);
+      return { grid, w, h, step };
     }
   };
 })();

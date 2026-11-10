@@ -59,6 +59,7 @@
       cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
       cv.addEventListener('pointerleave', () => { hov = null; onHover(null); draw(); });
       cv.addEventListener('dblclick', fit);
+      cv.addEventListener('contextmenu', e => { e.preventDefault(); const c = cellAt(e); if (c && grid[c[1] * GW + c[0]] >= 0 && BS.Viewer.onExclude) BS.Viewer.onExclude(grid[c[1] * GW + c[0]]); });
       cv.addEventListener('wheel', e => {
         e.preventDefault(); const r = cv.getBoundingClientRect(), mxp = e.clientX - r.left, myp = e.clientY - r.top;
         const nz = Math.min(128, Math.max(.5, cam.z * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));

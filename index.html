@@ -11,6 +11,19 @@
         <div class="left_s settingspan">
             <div class="logo">BSArt</div>
             <div class="setting">
+                <div>Режим арта</div>
+                <select id="mode">
+                    <option value="photo">Фото (по умолчанию)</option>
+                    <option value="calm">Спокойный (меньше ряби)</option>
+                    <option value="pixel">Пиксель-арт · 16 блоков</option>
+                    <option value="retro">Ретро · 8 блоков + Bayer</option>
+                    <option value="poster">Постер · 5 блоков</option>
+                    <option value="mono">Чёрно-белый · 6 блоков</option>
+                    <option value="comic">Комикс · контуры</option>
+                    <option value="dither">Фото с дизерингом</option>
+                </select>
+            </div>
+            <div class="setting">
                 <div>Размер арта <span id="sizeVal"></span></div>
                 <div class="presets" id="presets"></div>
                 <div class="trio">
@@ -58,6 +71,12 @@
                 <input type="button" class="filter-control" id="resetFilters" value="Сбросить фильтры">
             </div>
             <div class="setting">
+                <div>Блоки и рябь</div>
+                <input type="button" class="filter-control" id="openBlocks" value="Блоки…">
+                <div id="slBlocks"></div>
+                <small>Правый клик по блоку на холсте — исключить его</small>
+            </div>
+            <div class="setting">
                 <div>Цвет сетки</div>
                 <select id="colorselect"></select>
             </div>
@@ -93,6 +112,10 @@
                 <div>Вид на миникарте</div>
                 <canvas class="final_canvas" id="final_canvas2"></canvas>
             </div>
+            <div class="setting">
+                <div>Использовано в арте</div>
+                <div id="usedList"></div>
+            </div>
         </div>
         <div class="content">
             <canvas class="control_canvas" id="control_canvas"></canvas>
@@ -108,10 +131,27 @@
             <input type="button" id="cropNo" value="Отмена">
         </div>
     </div>
+    <div id="blkModal" hidden>
+        <div class="blkbox">
+            <div class="blkbar">
+                <input type="search" id="blkQ" placeholder="Поиск: имя или ID">
+                <select id="blkSort"><option value="id">По ID</option><option value="noise">По ряби</option><option value="light">По яркости</option></select>
+                <input type="button" id="blkAll" value="Все"><input type="button" id="blkNone" value="Снять все"><input type="button" id="blkInv" value="Инвертировать">
+                <input type="button" id="blkClose" value="Готово">
+            </div>
+            <div class="blkbar">
+                <span>Исключить рябее</span><input type="range" id="blkTh" min="0" max="100" value="60"><b id="blkThV"></b>
+                <input type="button" id="blkApply" value="Применить порог">
+                <span id="blkCount" class="muted"></span>
+            </div>
+            <div id="blkGrid"></div>
+        </div>
+    </div>
     <div id="toast"></div>
 
     <script src="js/blocks.js"></script>
     <script src="js/textures.js"></script>
+    <script src="js/palette.js"></script>
     <script src="js/processor.js"></script>
     <script src="js/viewer.js"></script>
     <script src="js/exporter.js"></script>

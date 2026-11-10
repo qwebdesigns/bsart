@@ -257,3 +257,30 @@ input[type="button"]:hover:not(:disabled) { background-color: #ffe2a8; }
 .rng b { color: #ffb13b; font-weight: 700; }
 .rng input { width: 100%; padding: 0; accent-color: #ffb13b; }
 .setting small { color: #8a8a8a; font-weight: 400; font-size: 11px; }
+
+/* ---- блоки, рябь, список использованных ---- */
+.muted { color: #8a8a8a; font-size: 12px; }
+#usedList { width: 95%; max-height: 260px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+.used { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 4px; border-radius: 4px; }
+.used:hover { background: #333; }
+.used img { width: 24px; height: 24px; image-rendering: pixelated; border-radius: 3px; flex: none; }
+.used span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.used em { font-style: normal; color: #aaa; }
+.used button { all: unset; cursor: pointer; padding: 0 6px; color: #ff6b6b; font-weight: 700; }
+#blkModal { position: fixed; inset: 0; z-index: 9000; background: rgba(0, 0, 0, .85); display: flex; align-items: center; justify-content: center; }
+#blkModal[hidden] { display: none; }
+.blkbox { width: min(96vw, 1100px); height: min(90vh, 800px); background: #1a1a1a; border-radius: 10px; display: flex; flex-direction: column; padding: 12px; gap: 10px; }
+.blkbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.blkbar input[type=search] { flex: 1; min-width: 160px; padding: 7px 10px; border-radius: 5px; border: 1px solid #ccc; }
+.blkbar select { width: auto; }
+.blkbar input[type=button] { width: auto; padding: 7px 14px; }
+.blkbar input[type=range] { width: 180px; accent-color: #ffb13b; }
+#blkGrid { flex: 1; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; align-content: start; }
+.blk { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 10px; border-radius: 8px; border: 2px solid #ffb13b; background: #262626; color: #fff; cursor: pointer; font: 11px 'Segoe UI', sans-serif; overflow: hidden; }
+.blk img { width: 56px; height: 56px; image-rendering: pixelated; border-radius: 4px; }
+.blk b { font-size: 11px; word-break: break-all; text-align: center; }
+.blk span { color: #aaa; }
+.blk i { position: absolute; left: 0; bottom: 0; height: 3px; background: #ff9f5a; }
+.blk.off { border-color: #444; opacity: .4; }
+.blk.off img { filter: grayscale(1); }
+.blk.off b { text-decoration: line-through; }
