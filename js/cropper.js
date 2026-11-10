@@ -12,14 +12,14 @@
     c.width = c.height = Math.min(s, 2048);
     c.getContext('2d').drawImage(img, (w - s) / 2, (h - s) / 2, s, s, 0, 0, c.width, c.height); return c;
   }
-  async function ask(file) {
+  async function ask(file, aspect) {
     const url = await new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(file); });
     const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
     try { await lib(); } catch { return { canvas: centerSquare(img), url }; }
     const modal = document.getElementById('cropModal'), el = document.getElementById('cropImg');
     return new Promise(res => {
       modal.hidden = false; el.src = url;
-      const cr = new Cropper(el, { aspectRatio: 1, viewMode: 1, autoCropArea: 1, guides: false });
+      const cr = new Cropper(el, { aspectRatio: aspect || 1, viewMode: 1, autoCropArea: 1, guides: false });
       const done = v => { modal.hidden = true; cr.destroy(); res(v); };
       document.getElementById('cropOk').onclick = () => { const c = cr.getCroppedCanvas({ imageSmoothingQuality: 'high', maxWidth: 2048, maxHeight: 2048 }); done({ canvas: c, url: c.toDataURL('image/png') }); };
       document.getElementById('cropNo').onclick = () => done(null);

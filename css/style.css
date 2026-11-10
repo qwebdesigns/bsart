@@ -243,3 +243,17 @@ input[type="button"]:hover:not(:disabled) { background-color: #ffe2a8; }
     .content { grid-area: auto; height: 70vh; order: -1; }
     .settingspan { max-height: none; }
 }
+
+/* ---- фильтры и размеры ---- */
+.settingspan { overflow-y: auto; max-height: 100vh; }
+.presets { display: flex; gap: 4px; width: 95%; }
+.presets button {
+    flex: 1; padding: 7px 0; border-radius: 5px; border: 1px solid #ccc; background: #fff; color: #000;
+    font: 700 13px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; cursor: pointer;
+}
+.presets button:hover { background: #ffe2a8; }
+.rng { display: flex; flex-direction: column; width: 95%; gap: 2px; font-size: 13px; }
+.rng span { display: flex; justify-content: space-between; }
+.rng b { color: #ffb13b; font-weight: 700; }
+.rng input { width: 100%; padding: 0; accent-color: #ffb13b; }
+.setting small { color: #8a8a8a; font-weight: 400; font-size: 11px; }

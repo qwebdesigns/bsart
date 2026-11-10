@@ -11,31 +11,59 @@
         <div class="left_s settingspan">
             <div class="logo">BSArt</div>
             <div class="setting">
-                <div>Размер арта <span id="pixelSlider_val"></span></div>
-                <select id="pixelSlider">
-                    <option value="2">2 × 2</option>
-                    <option value="4">4 × 4</option>
-                    <option value="8">8 × 8</option>
-                    <option value="16">16 × 16</option>
-                    <option value="32" selected>32 × 32</option>
-                    <option value="64">64 × 64</option>
-                    <option value="128">128 × 128</option>
-                    <option value="256">256 × 256</option>
+                <div>Размер арта <span id="sizeVal"></span></div>
+                <div class="presets" id="presets"></div>
+                <div class="trio">
+                    <label>Ширина (X)<input type="number" id="szW" min="1" max="256" value="32"></label>
+                    <label>Высота (Z)<input type="number" id="szH" min="1" max="256" value="32"></label>
+                </div>
+                <label class="check"><input type="checkbox" id="szLock"> Сохранять пропорции фото</label>
+                <div>Подгонка кадра</div>
+                <select id="fit">
+                    <option value="cover">Заполнить (обрезать края)</option>
+                    <option value="contain">Вписать (пустые поля)</option>
+                    <option value="stretch">Растянуть</option>
                 </select>
+            </div>
+            <div class="setting">
+                <div>Алгоритм сжатия</div>
+                <select id="algo">
+                    <option value="area">Усреднение (точное)</option>
+                    <option value="smooth">Сглаживание (мягкое)</option>
+                    <option value="nearest">Ближайший пиксель (чёткий)</option>
+                    <option value="mode">Доминирующий цвет (контуры)</option>
+                </select>
+                <div>Подбор цвета</div>
+                <select id="metric">
+                    <option value="lab">Lab (как видит глаз)</option>
+                    <option value="rgb">RGB (простой)</option>
+                </select>
+            </div>
+            <div class="setting">
+                <div>Дизеринг</div>
+                <select id="dither">
+                    <option value="none">Нет</option>
+                    <option value="fs">Флойд — Стейнберг</option>
+                    <option value="atk">Аткинсон (контрастный)</option>
+                    <option value="sl">Sierra Lite (быстрый)</option>
+                    <option value="bayer">Упорядоченный (Bayer 4×4)</option>
+                </select>
+                <div id="slDither"></div>
+            </div>
+            <div class="setting">
+                <div>Фильтры <small>(двойной клик по ползунку — сброс)</small></div>
+                <div id="slFilters"></div>
+                <label class="check"><input type="checkbox" id="auto"> Автоуровни (тёмные/светлые фото)</label>
+                <label class="check"><input type="checkbox" id="gray"> Чёрно-белое</label>
+                <input type="button" class="filter-control" id="resetFilters" value="Сбросить фильтры">
             </div>
             <div class="setting">
                 <div>Цвет сетки</div>
                 <select id="colorselect"></select>
             </div>
             <div class="setting">
-                <label class="check"><input type="checkbox" id="ditherChk"> Дизеринг (плавные переходы)</label>
-            </div>
-            <div class="setting">
                 <div>Загрузить фото</div>
                 <input type="file" class="filter-control" id="memberfile" accept="image/*">
-            </div>
-            <div class="setting">
-                <div></div>
                 <input type="button" class="filter-control" id="acceptbutton" value="Обработать">
             </div>
             <div class="setting">
@@ -49,9 +77,6 @@
                 <label class="check"><input type="checkbox" id="expSkip" checked> Пропускать пустые клетки</label>
                 <div id="expInfo"></div>
                 <input type="button" class="filter-control" id="downloadTxt" value="Скачать .txt">
-            </div>
-            <div class="setting">
-                <div>Скачать результат</div>
                 <input type="button" class="filter-control" id="downloadButton" value="Скачать PNG">
             </div>
         </div>
@@ -61,7 +86,7 @@
                 <img src="./bsart.png" id="myimg" alt="Загруженное фото">
             </div>
             <div class="setting">
-                <div>Обработка шаг @1</div>
+                <div>После сжатия и фильтров</div>
                 <canvas class="temp_canvas" id="temp_canvas"></canvas>
             </div>
             <div class="setting">
